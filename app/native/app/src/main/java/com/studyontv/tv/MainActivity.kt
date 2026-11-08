@@ -104,6 +104,7 @@ open class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        BackgroundRecovery.requestBinding(this)
         if (Prefs.onboarded(this)) GateService.ensureRunning(this, "app")
         if (this is GateActivity && !DeviceRuntime.learning.status().optBoolean("free")) MediaPause.pause(this)
         if (webReleased) createWeb()

@@ -90,7 +90,12 @@ class GateService : Service() {
             else MediaPause.release(it)
         }
         wasUsing = active && !free && reason.isEmpty() && !feedbackVisible
-        if (!awake || !monitoring || (!settingsBlocked && ((reason.isEmpty() && !feedbackVisible) || (pkg != null && exempt(pkg, false))))) hideAll()
+        if (!awake || !monitoring || (!settingsBlocked && ((reason.isEmpty() && !feedbackVisible) || (pkg != null && exempt(pkg, false))))) {
+            overlay.hide()
+            WatchAccessibilityService.hideGate()
+            // updateCountdown manages its own visibility; removing it here would recreate
+            // the window on every one-second tick during normal viewing and cause flicker.
+        }
         val snapshot = "reason=$gateReason free=$free awake=$awake monitoring=$monitoring pkg=$pkg active=$active gate=${hasGate()} overlay=$canOverlay"
         if (snapshot != lastDiag) { lastDiag = snapshot; Diag.info("Gate", snapshot) }
         if ((protecting || settingsBlocked) && gateReason.isNotEmpty() && now - lastGate > 1800 && !hasGate()) {
@@ -358,6 +363,7 @@ class GateService : Service() {
             .put("usage", Foreground.hasUsageAccess(context))
             .put("accessibility", WatchAccessibilityService.connected)
             .put("accessibilityEnabled", WatchAccessibilityService.enabled(context))
+            .put("recovery", BackgroundRecovery.report(context))
             .put("gate", hasGate())
             .put("lastTickSeconds", if (instance == null) -1 else ((SystemClock.elapsedRealtime() - (instance?.lastTick ?: 0)) / 1000))
             .put("lastError", instance?.lastGateError ?: "")

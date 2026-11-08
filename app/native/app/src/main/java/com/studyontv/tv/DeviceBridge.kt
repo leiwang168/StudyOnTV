@@ -123,10 +123,9 @@ open class DeviceBridge(protected val activity: Activity, private val connection
 
     @JavascriptInterface
     fun installUpdate(url: String, latest: String, notes: String) {
-        val cached = Updater.newerThanCurrent(activity, Updater.cachedInfo(activity))
-        val payload = if (cached != null && cached.url == url) Updater.toJson(cached) else JSONObject()
-            .put("latest", latest).put("notes", notes).put("url", url)
-        payload.put("current", BuildConfig.VERSION_NAME)
+        val cached = Updater.newerThanCurrent(activity, Updater.cachedInfo(activity)) ?: return
+        if (cached.url != url) return
+        val payload = Updater.toJson(cached).put("current", BuildConfig.VERSION_NAME)
         activity.runOnUiThread {
             activity.startActivity(Intent(activity, UpdateActivity::class.java).putExtra("payload", payload.toString()))
         }

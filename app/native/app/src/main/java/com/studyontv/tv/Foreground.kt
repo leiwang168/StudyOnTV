@@ -28,7 +28,7 @@ object Foreground {
 
     fun resumeOwn(activity: android.app.Activity) {
         ownActivity = java.lang.ref.WeakReference(activity)
-        update(activity.packageName)
+        lastPackage = activity.packageName
     }
     fun pauseOwn(activity: android.app.Activity) {
         if (ownActivity?.get() === activity) ownActivity = null
@@ -67,14 +67,14 @@ object Foreground {
             // 缓存里是系统临时窗口时不采信：先用使用情况统计重新确认，
             // 再退到最近一个「真正的前台应用」。否则小米电视上会被卡在
             // com.android.systemui 上，一直判定为系统界面而不再计时（issue #69）。
-            if (cached != null && !isTransient(cached)) return cached
-            if (hasUsageAccess(context)) usageFallback(context)?.let { return it }
+            if (cached != null && cached != context.packageName && !isTransient(cached)) return cached
+            if (hasUsageAccess(context)) usageFallback(context)?.takeIf { it != context.packageName }?.let { return it }
             // 兜底时不能返回本应用自己：那会被当成「在自家学习页」而停扣时长。
             lastRealPackage?.takeIf { it != context.packageName }?.let { return it }
-            return cached
+            return cached?.takeIf { it != context.packageName }
         }
         if (!hasUsageAccess(context)) return lastRealPackage?.takeIf { it != context.packageName }
-        return usageFallback(context)
+        return usageFallback(context)?.takeIf { it != context.packageName }
     }
 
     private fun usageFallback(context: Context): String? {

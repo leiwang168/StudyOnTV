@@ -7,12 +7,9 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * 版本检查：只使用蒲公英应用内更新接口（appKey + 当前版本）。
- * 不再访问 GitHub 或第三方镜像；蒲公英失败时由更新页引导用户手动下载。
- */
+/** Check releases published in the personal fork. */
 object Updater {
-    const val OWNER_REPO = "chadyi/StudyOnTV"
+    const val OWNER_REPO = "leiwang168/StudyOnTV"
     private const val GITHUB_API = "https://api.github.com/repos/$OWNER_REPO/releases/latest"
     private const val MANIFEST_PATH = "$OWNER_REPO/main/update.json"
     private val MANIFEST_URLS = listOf(
@@ -45,12 +42,11 @@ object Updater {
 
     /** 可用的 APK 下载地址：上次成功的线路优先，其次直连，再其次各个镜像 */
     fun downloadCandidates(ctx: Context, url: String): List<Pair<String, String>> =
-        listOf("蒲公英" to url)
+        listOf("GitHub" to url)
 
     fun check(ctx: Context, forceRefresh: Boolean = false, onResult: (Info?) -> Unit) {
-        val cachedAt = Prefs.updateCheckedAt(ctx)
         val cached = cachedInfo(ctx)
-        if (!forceRefresh && cached != null && System.currentTimeMillis() - cachedAt < CACHE_MS) {
+        if (!forceRefresh && System.currentTimeMillis() - Prefs.updateCheckedAt(ctx) < CACHE_MS) {
             onResult(cached)
             return
         }
@@ -69,18 +65,26 @@ object Updater {
     /** 同步检查；返回结果和每个来源的尝试记录（给管理面板显示） */
     @Synchronized
     fun checkNow(ctx: Context): Pair<Info?, JSONArray> {
-        val log = JSONArray()
-        val current = currentVersion(ctx)
         val started = System.currentTimeMillis()
         var info: Info? = null
+        val log = JSONArray()
         try {
-            info = Pgyer.info(ctx, current, currentVersionCode(ctx))
-            log.put(JSONObject().put("source", "蒲公英").put("ok", info != null).put("ms", System.currentTimeMillis() - started)
-                .put("message", if (info == null) "当前已是最新版本" else "v" + info.latest))
+            val release = fetch(GITHUB_API)
+            if (release != null) {
+                info = parseRelease(release, currentVersion(ctx), "GitHub Fork")
+                require(info != null) { "发布版本缺少 TV 安装包或 SHA-256" }
+            }
+            log.put(JSONObject().put("source", "GitHub Fork").put("ok", true)
+                .put("ms", System.currentTimeMillis() - started)
+                .put("message", if (info == null) "尚无发布版本" else "v${info.latest}"))
         } catch (e: Exception) {
-            Diag.error("Update", "Pgyer check failed", e)
-            log.put(JSONObject().put("source", "蒲公英").put("ok", false).put("ms", System.currentTimeMillis() - started)
+            Diag.error("Update", "Fork release check failed", e)
+            log.put(JSONObject().put("source", "GitHub Fork").put("ok", false)
+                .put("ms", System.currentTimeMillis() - started)
                 .put("message", e.message?.take(160) ?: e.javaClass.simpleName))
+            return cachedInfo(ctx) to log.also {
+                Prefs.setUpdateLog(ctx, JSONObject().put("at", System.currentTimeMillis()).put("items", it).toString())
+            }
         }
         Prefs.setUpdateInfo(ctx, info?.let { toJson(it).toString() } ?: "")
         Prefs.setUpdateCheckedAt(ctx, System.currentTimeMillis())
@@ -99,9 +103,7 @@ object Updater {
             val o = JSONObject(raw)
             Info(o.optString("latest"), o.optString("current"), o.optBoolean("force"),
                 o.optString("notes"), o.optString("url"), o.optString("sha256"), o.optString("source"))
-        } catch (e: Exception) {
-            null
-        }
+        } catch (_: Exception) { null }
     }
 
     private fun fetch(endpoint: String): JSONObject? {
@@ -112,6 +114,7 @@ object Updater {
         conn.setRequestProperty("Accept", "application/vnd.github+json, application/json")
         return try {
             val code = conn.responseCode
+            if (code == 404) return null
             if (code !in 200..299) throw IllegalStateException(if (code == 403 || code == 429) "HTTP $code（请求太频繁或被限流）" else "HTTP $code")
             val text = conn.inputStream.use { stream -> stream.readBytes().also { require(it.size < 2_000_000) { "响应过大" } } }
             JSONObject(String(text, Charsets.UTF_8))
@@ -134,9 +137,9 @@ object Updater {
         val candidates = (0 until (assets?.length() ?: 0)).map { assets!!.getJSONObject(it) }
         val selected = candidates.firstOrNull { it.optString("name").contains(flavorMarker, true) && it.optString("name").endsWith(".apk", true) }
             ?: if (BuildConfig.FLAVOR == "tv") candidates.firstOrNull { it.optString("name").matches(Regex("StudyOnTV-v[0-9.]+\\.apk")) } else null
-        val url = selected?.optString("browser_download_url")?.takeIf { it.isNotEmpty() } ?: return null
+        val url = selected?.optString("browser_download_url")?.takeIf { it.startsWith("https://github.com/$OWNER_REPO/releases/download/") } ?: return null
         // GitHub 会给 Release 附件计算 digest（sha256:...），用于校验镜像下载的文件
-        val digest = selected.optString("digest").takeIf { it.startsWith("sha256:", true) }?.substring(7).orEmpty()
+        val digest = selected.optString("digest").takeIf { it.matches(Regex("sha256:[0-9a-fA-F]{64}")) }?.substring(7) ?: return null
         val force = body.contains("[force]", true) || body.contains("force update", true)
         return Info(tag, current, force && isNewer(tag, current), body.trim(), url, digest.lowercase(), source)
     }
@@ -182,7 +185,7 @@ object Updater {
     fun status(ctx: Context): JSONObject {
         val info = cachedInfo(ctx)
         val log = try { JSONObject(Prefs.updateLog(ctx)) } catch (_: Exception) { JSONObject() }
-        return JSONObject().put("current", currentVersion(ctx))
+        return JSONObject().put("current", currentVersion(ctx)).put("updateMode", "fork")
             .put("latest", info?.latest ?: "").put("hasUpdate", newerThanCurrent(ctx, info) != null)
             .put("notes", info?.notes ?: "").put("source", info?.source ?: "")
             .put("checkedAt", Prefs.updateCheckedAt(ctx)).put("checking", checking)

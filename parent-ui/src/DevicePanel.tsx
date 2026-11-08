@@ -82,7 +82,7 @@ export default function DevicePanel({sessionId,onPasswordChanged,only}:{sessionI
    </div></details>
   </Panel>}
   {only==='update'&&<Panel title="版本更新" icon={CloudDownload}>
-   <Row title={u?.hasUpdate?`有新版本 v${u.latest}`:'当前已是最新版本'} note={`上次检查：${time(startedAt)}`}>
+   <Row title={u?.hasUpdate?`有新版本 v${u.latest}`:'个人版更新'} note={`更新源：GitHub Fork · 上次检查：${time(startedAt)}`}>
     <Button variant="outline" disabled={check.isPending||polling} onClick={()=>check.mutate()}><RefreshCw className={polling?'animate-spin':''}/>{polling?'检查中…':'检查更新'}</Button></Row>
    {u?.hasUpdate&&<p className="text-sm leading-6 text-muted-foreground whitespace-pre-line mb-4">{u.notes?.replace(/\[force\]/gi,'').trim()}<br/><b className="text-foreground">在被控设备的学习页右上角选择“更新”即可安装。</b></p>}
      </Panel>}

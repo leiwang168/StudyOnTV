@@ -126,7 +126,7 @@
 .remote-status>div{flex:1;min-width:0}
 .remote-status h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Tabler components are scoped to the home page in RemotePage.tsx. */
+/* Tabler components are limited to .tabler-home by the build plugin. */
 .home-shell{--background:#fafafa;--foreground:#333;--card:#fff;--muted-foreground:#737373;--border:#e5e5e5;--primary:oklch(54.6% .1724 254.2);--primary-foreground:#fff;--sidebar:#fff;--sidebar-foreground:#525252;--sidebar-accent:#edf5fc;--sidebar-accent-foreground:#066fd1;--sidebar-primary:#066fd1}
 .home-shell [data-slot=sidebar-inset]{background:var(--background)}
 .home-shell header.sticky{background:var(--card);border-bottom:1px solid var(--border)}
@@ -220,3 +220,35 @@
 @media(max-width:767px){.home-shell .page-content{padding:16px 16px calc(96px + env(safe-area-inset-bottom))}.tabler-home .page-header{margin-bottom:20px}.tabler-home .page-pretitle{font-size:10px}.tabler-home .page-title{font-size:20px}.tabler-home .btn-list>.btn{min-width:100px;max-width:128px}.tabler-home .dashboard-stats,.tabler-home .dashboard-details{--tblr-gutter-x:12px;--tblr-gutter-y:12px;margin-bottom:16px!important}.tabler-home .card-sm{min-height:164px}.tabler-home .card-sm .card-body{padding:16px}.tabler-home .card-sm .h1{font-size:28px}.tabler-home .card-header{min-height:56px;padding:14px 16px}.tabler-home .card-body{padding:16px}.tabler-home .card-footer{padding:14px 16px}.tabler-home .dashboard-control-card .list-group-item{padding:16px}.tabler-home .dashboard-records th:first-child,.tabler-home .dashboard-records td:first-child{padding-left:16px}.tabler-home .dashboard-records th:last-child,.tabler-home .dashboard-records td:last-child{padding-right:16px}}
 
 @media(max-width:359px){.tabler-home .card-sm .card-body{padding:14px}.tabler-home .card-sm .subheader{font-size:11px}.tabler-home .card-sm .text-secondary,.tabler-home .card-sm .btn{font-size:11px}.tabler-home .card-sm .h1{font-size:26px}.tabler-home .page-header .btn-list>.btn{min-width:96px;padding-left:10px;padding-right:10px}}
+
+/* Keep actions and long status labels readable in the narrow dashboard column. */
+.tabler-home .dashboard-device-heading>div{min-width:0;overflow-wrap:anywhere}
+.tabler-home .dashboard-device-symbol{flex-shrink:0}
+.tabler-home .dashboard-device-bottom{flex-wrap:wrap}
+.tabler-home .dashboard-device-bottom>div{min-width:0;max-width:100%}
+.tabler-home .dashboard-balance{overflow-wrap:anywhere}
+.tabler-home .dashboard-quick-facts span{min-width:0;overflow-wrap:anywhere}
+.tabler-home .dashboard-quick-facts button{flex-shrink:0}
+@media(max-width:991px){
+ .tabler-home .page-header>.row{flex-wrap:wrap;row-gap:14px}
+ .tabler-home .page-header>.row>.col{flex-basis:100%}
+ .tabler-home .page-header>.row>.col-auto{width:100%;margin-left:0!important}
+ .tabler-home .page-header .btn-list{flex-wrap:wrap}
+ .tabler-home .dashboard-overview{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tabler-home .dashboard-device{grid-column:1/-1}
+ .tabler-home .dashboard-quick-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:767px){
+ .tabler-home .page-header .btn-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+ .tabler-home .page-header .btn-list>.btn{width:100%;min-width:0;max-width:none;min-height:42px;margin:0;padding:8px}
+ .tabler-home .dashboard-device-bottom{gap:12px}
+ .tabler-home .dashboard-overview .card-body{padding:16px}
+ .tabler-home .dashboard-quick-facts>div{padding:12px 10px;gap:8px}
+}
+@media(max-width:359px){
+ .tabler-home .dashboard-overview .card-body{padding:14px}
+ .tabler-home .dashboard-device-bottom{align-items:flex-start;flex-direction:column}
+ .tabler-home .dashboard-quick-facts>div{gap:6px}
+ .tabler-home .dashboard-quick-facts>div>svg{width:16px;height:16px}
+ .tabler-home .dashboard-quick-facts strong{font-size:13px}
+}

@@ -94,6 +94,13 @@ class OnboardingActivity : Activity() {
             if (Build.VERSION.SDK_INT >= 23 && !ignoringBattery()) openSettings(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, true, Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
             else openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, true)
         }
+        add(android.R.drawable.ic_popup_sync, "后台自动恢复", "开启通知访问后自动恢复无障碍服务，不读取通知；关闭通知访问即可停用", true,
+            { BackgroundRecovery.listenerAllowed(this) && BackgroundRecovery.canWrite(this) }) {
+            val message = if (BackgroundRecovery.canWrite(this)) "请在系统通知访问中允许本应用。"
+                else "需由电脑通过 ADB 授予系统设置权限，再开启通知访问。"
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            openSettings("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+        }
         add(android.R.drawable.ic_lock_lock, "防卸载", "孩子无法直接删除应用，家长可随时关闭", true, { UninstallGuard.active(this) }) {
             if (UninstallGuard.active(this)) openSettings(Settings.ACTION_SECURITY_SETTINGS)
             else try { GateService.openingSystemPage(parentAuthorized = true); startActivity(UninstallGuard.requestIntent(this)) } catch (_: Exception) {

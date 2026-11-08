@@ -18,15 +18,15 @@ android {
         applicationId = "com.studyontv.tv"
         minSdk = 21          // Android 5.0
         targetSdk = 34
-        versionCode = 26
-        versionName = "0.3.21"
+        versionCode = 30
+        versionName = "1.0.1"
     }
 
     flavorDimensions += "device"
     productFlavors {
         create("tv") {
             dimension = "device"
-            applicationId = "com.studyontv.tv"
+            applicationId = "com.lion.studyontv"
         }
         create("mobile") {
             dimension = "device"
@@ -90,6 +90,7 @@ val syncWebAssets by tasks.registering(Sync::class) {
     from(File(repoRoot, "shared/katex")) { into("web/assets/vendor/katex") }
     from(File(repoRoot, "shared/math.js")) { into("web/assets/js") }
     from(File(repoRoot, "data/holidays")) { into("holidays") }
+    from(File(repoRoot, "app/native/notices")) { into("notices") }
     into(layout.projectDirectory.dir("src/main/assets"))
 }
 

@@ -8,6 +8,9 @@ import android.content.Intent
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return
+        // Credential storage and management data must remain untouched until user unlock.
+        if (!BackgroundRecovery.unlocked(context)) return
+        BackgroundRecovery.requestBinding(context)
         // 开机、部分电视的快速开机、以及应用自更新覆盖安装后，都要重新拉起管理服务
         if (action in setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED,
                 "android.intent.action.QUICKBOOT_POWERON", "com.htc.intent.action.QUICKBOOT_POWERON",
@@ -21,7 +24,7 @@ class BootReceiver : BroadcastReceiver() {
         }
         // 屏幕点亮 / 用户解锁 / 网络变化：进程被杀后快速拉起的兜底
         // 只在管控配置已存在时才拉起，避免干扰未配对的设备
-        if (action in setOf(Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT,
+        if (action in setOf(Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT, Intent.ACTION_USER_UNLOCKED,
                 "android.net.conn.CONNECTIVITY_CHANGE", Watchdog.REVIVE_ACTION)) {
             if (GateService.running) return          // 已在运行，无需操作
             if (!Prefs.onboarded(context)) return      // 未完成引导，不拉起

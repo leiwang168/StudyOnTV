@@ -7,9 +7,8 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription,DialogFooter} from '@/components/ui/dialog';
 import {api} from './api';
-import tablerCss from '@tabler/core/dist/css/tabler.css?raw';
+import '@tabler/core/dist/css/tabler.css';
 import {BarChart,Bar,ResponsiveContainer,XAxis,YAxis,Tooltip,CartesianGrid} from 'recharts';
-const scopedTabler=`@scope (.tabler-home) { ${tablerCss.replace(/@charset[^;]+;/g,'').replace(/:root/g,':scope').replace(/\nbody \{/g,'\n:scope {')} }`;
 
 
 /* 遥控：像电视遥控器一样，随时临时解锁（大人自己用）或立即锁定（孩子回来了），1 秒内生效 */
@@ -43,7 +42,6 @@ export default function RemotePage({state,sessionId}:{state:any,sessionId:number
  const remaining=mode?left:learning.remainingSeconds||0;
  const open=(action:'unlock'|'lock')=>setCustom({mode:action,minutes:'30'});
  return <div className="tabler-home">
-  <style>{scopedTabler}</style>
   <div className="page-header d-print-none"><div className="row align-items-center"><div className="col"><div className="page-pretitle">设备管理</div><h1 className="page-title">今日概览</h1></div><div className="col-auto ms-auto"><div className="btn-list"><button className="btn" onClick={()=>location.hash='/rules'}><BookOpen className="icon"/>学习计划</button><button className="btn btn-primary" disabled={run.isPending} onClick={()=>open('unlock')}><Play className="icon"/>临时解锁</button>
 {!mode&&<button className="btn btn-danger" disabled={run.isPending} onClick={()=>{if(window.confirm('关闭管控后孩子可无限使用，直到您手动恢复，确定吗？'))go('indefinite',0,'管控已关闭');}}><LockKeyholeOpen className="icon"/>关闭管控</button>}
 {mode==='indefinite'&&<button className="btn btn-primary" disabled={run.isPending} onClick={()=>go('cancel',0,'管控已恢复')}><LockKeyhole className="icon"/>恢复管控</button>}</div></div></div></div>

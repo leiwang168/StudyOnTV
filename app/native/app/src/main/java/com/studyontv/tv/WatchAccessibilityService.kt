@@ -12,7 +12,7 @@ class WatchAccessibilityService : AccessibilityService() {
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val pkg = event.packageName?.toString()
             if (pkg != null && (pkg.contains("inputmethod") || pkg.contains("keyboard"))) return
-            if (!GateService.hasGate() || pkg != packageName) Foreground.update(pkg)
+            if (pkg != packageName) Foreground.update(pkg)
             // 无障碍服务由系统常驻，顺便充当看门狗：管理服务被系统清理后在下一次切换应用时拉起
             if (!GateService.running) GateService.ensureRunning(this, "accessibility")
             GateService.onForegroundChanged(this, pkg)
@@ -22,6 +22,7 @@ class WatchAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         connected = true
+        BackgroundRecovery.noteAccessibilityConnected(this)
         gate = GateOverlay(this, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY) {
             performGlobalAction(GLOBAL_ACTION_HOME)
         }

@@ -87,7 +87,7 @@ class UpdateActivity : Activity() {
 
         val buttons = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         lateinit var go: android.widget.Button
-        go = TvUi.button(this, if (ApkInstaller.alreadyDownloaded(this, 0)) "开始安装" else "立即更新", true) {
+        go = TvUi.button(this, if (ApkInstaller.alreadyDownloaded(this, 0, sha256)) "开始安装" else "立即更新", true) {
             startUpdate(url, go, progress)
         }
         go.textSize = if (tv) 21f else 18f
@@ -100,9 +100,9 @@ class UpdateActivity : Activity() {
         }
         secondary.addView(TvUi.button(this, "手动下载") {
             try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Pgyer.pageUrl)))
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${Updater.OWNER_REPO}/releases")))
             } catch (e: Exception) {
-                status.text = "这台设备没有可用浏览器，请用手机或电脑访问 " + Pgyer.pageUrl
+                status.text = "这台设备没有可用浏览器，请用手机或电脑访问 GitHub 发布页"
                 Diag.error("Update", "cannot open manual download page", e)
             }
         }, LinearLayout.LayoutParams(0, dp(if (tv) 52 else 48), 1f).apply {
@@ -150,7 +150,7 @@ class UpdateActivity : Activity() {
         if (url.isEmpty()) { button.text = "没有下载地址"; return }
 
         val ready = ApkInstaller.apkFile(this)
-        if (ApkInstaller.alreadyDownloaded(this, 0)) {
+        if (ApkInstaller.alreadyDownloaded(this, 0, sha256)) {
             Prefs.setUpdateInProgress(this, true)
             if (ApkInstaller.install(this, ready)) return
             button.text = "请允许安装未知应用"
@@ -174,7 +174,7 @@ class UpdateActivity : Activity() {
                 } else {
                     button.isEnabled = true
                     button.text = "下载失败，重试"
-                    status.text = (ApkInstaller.lastError.ifEmpty { "下载失败，请检查网络" }) + "。也可以点「手动下载」到蒲公英安装。"
+                    status.text = (ApkInstaller.lastError.ifEmpty { "下载失败，请检查网络" }) + "。也可以点「手动下载」访问发布页。"
                     progress?.visibility = View.GONE
                 }
                 button.requestFocus()

@@ -5,12 +5,11 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
-import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 
 /**
- * 看电视期间右上角显示的剩余时间角标：只显示分钟，最后 1 分钟闪烁提醒。
+ * 看电视期间右上角显示的剩余时间角标：按分钟更新，最后 1 分钟保持红色提醒。
  * 纯展示（FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCHABLE，不吃遥控器按键、不挡触摸），
  * 由 GateService 的每秒 tick 驱动；答题页自身不显示（它有自己的顶部胶囊）。
  */
@@ -18,7 +17,7 @@ class CountdownOverlay(private val context: Context) {
     private val manager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var view: TextView? = null
     private var attached = false
-    private var blinkOn = true
+    private var lastMinutes: Long? = null
     private var lastUrgent: Boolean? = null
     var lastError: String = ""
         private set
@@ -51,7 +50,11 @@ class CountdownOverlay(private val context: Context) {
         if (seconds <= 0) { hide(); return }
         val urgent = seconds <= 60
         val chip = chip()
-        chip.text = "剩余 ${(seconds + 59) / 60} 分钟"
+        val minutes = (seconds + 59) / 60
+        if (lastMinutes != minutes) {
+            chip.text = "剩余 $minutes 分钟"
+            lastMinutes = minutes
+        }
         paint(urgent)
         if (!attached) {
             val params = WindowManager.LayoutParams(
@@ -71,7 +74,6 @@ class CountdownOverlay(private val context: Context) {
                 return
             }
         }
-        chip.visibility = if (urgent) { blinkOn = !blinkOn; if (blinkOn) View.VISIBLE else View.INVISIBLE } else View.VISIBLE
     }
 
     fun hide() {
@@ -83,5 +85,7 @@ class CountdownOverlay(private val context: Context) {
     fun destroy() {
         hide()
         view = null
+        lastMinutes = null
+        lastUrgent = null
     }
 }

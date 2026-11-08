@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="com.studyontv.recovery" android:versionCode="2" android:versionName="0.1.1-personal">
+  <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
+  <queries>
+    <package android:name="com.lion.studyontv" />
+  </queries>
+  <application android:allowBackup="false" android:label="题了个题 · 待机恢复" android:supportsRtl="true">
+    <service android:name=".RecoveryListener" android:directBootAware="true" android:exported="true" android:label="题了个题 · 待机恢复" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+    <!-- Only shell/system (DUMP permission) can configure recovery, not other apps. -->
+    <receiver android:name=".ConfigReceiver" android:exported="true" android:permission="android.permission.DUMP" />
+  </application>
+</manifest>

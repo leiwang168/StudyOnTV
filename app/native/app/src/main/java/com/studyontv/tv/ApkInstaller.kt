@@ -46,14 +46,26 @@ object ApkInstaller {
         return true
     }
 
-    fun alreadyDownloaded(ctx: Context, sizeHint: Long): Boolean {
+    fun alreadyDownloaded(ctx: Context, sizeHint: Long, sha256: String): Boolean {
         val f = apkFile(ctx)
-        return f.exists() && (sizeHint <= 0 || f.length() == sizeHint) && validUpdate(ctx, f)
+        if (!sha256.matches(Regex("[0-9a-fA-F]{64}")) || !f.exists() || (sizeHint > 0 && f.length() != sizeHint)) return false
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        f.inputStream().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
+            }
+        }
+        val actual = digest.digest().joinToString("") { "%02x".format(it) }
+        return actual.equals(sha256, true) && validUpdate(ctx, f)
     }
 
     /** 依次尝试直连和各个加速镜像，任一线路成功即返回 */
     fun download(ctx: Context, url: String, sha256: String, onSource: (String) -> Unit, onProgress: (Int) -> Unit): File? {
         lastError = ""
+        if (!sha256.matches(Regex("[0-9a-fA-F]{64}"))) { lastError = "缺少有效的 SHA-256 校验值"; return null }
         for ((name, candidate) in Updater.downloadCandidates(ctx, url)) {
             onSource(name)
             val file = downloadFrom(ctx, candidate, sha256, onProgress)
